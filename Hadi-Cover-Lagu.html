@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hadi - Cover Lagu</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+}
+
+#cover {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#album {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+#album.visible {
+    opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div id="cover">
+    <img id="album" alt="Cover Lagu">
+</div>
+
+<script>
+const album = document.getElementById("album");
+
+let socket = null;
+let reconnectTimer = null;
+let lastCover = "";
+
+function tampilkanCover(url) {
+    if (!url || url === lastCover) return;
+
+    const gambar = new Image();
+
+    gambar.onload = function() {
+        album.src = url;
+        album.classList.add("visible");
+        lastCover = url;
+        console.log("[COVER] Cover lagu diperbarui");
+    };
+
+    gambar.onerror = function() {
+        console.log("[COVER] Gagal memuat gambar");
+    };
+
+    gambar.src = url;
+}
+
+function hubungkan() {
+    socket = new WebSocket("ws://127.0.0.1:8766");
+
+    socket.onopen = function() {
+        console.log("[COVER] Terhubung ke Bridge YTMD");
+    };
+
+    socket.onmessage = function(event) {
+        try {
+            const pesan = JSON.parse(event.data);
+
+            if (pesan.event !== "now_playing") return;
+
+            const cover = pesan.data?.cover;
+
+            if (cover) {
+                tampilkanCover(cover);
+            }
+
+        } catch (error) {
+            console.log("[COVER] Kesalahan data:", error);
+        }
+    };
+
+    socket.onclose = function() {
+        console.log("[COVER] Koneksi terputus, mencoba kembali");
+
+        clearTimeout(reconnectTimer);
+
+        reconnectTimer = setTimeout(hubungkan, 3000);
+    };
+
+    socket.onerror = function(error) {
+        console.log("[COVER] WebSocket error");
+        socket.close();
+    };
+}
+
+hubungkan();
+</script>
+
+</body>
+</html>
