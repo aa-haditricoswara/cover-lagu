@@ -15,24 +15,26 @@
 html, body {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
+    width: 400px;
+    height: 400px;
     overflow: hidden;
+    background: transparent;
 }
 
 #cover {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 400px;
+    height: 400px;
+    overflow: hidden;
+    position: relative;
 }
 
 #album {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    position: absolute;
+    inset: 0;
+    width: 400px;
+    height: 400px;
+    object-fit: cover;
+    object-position: center;
     opacity: 0;
     transition: opacity 0.5s ease;
 }
@@ -65,7 +67,7 @@ function tampilkanCover(url) {
         album.src = url;
         album.classList.add("visible");
         lastCover = url;
-        console.log("[COVER] Cover lagu diperbarui");
+        console.log("[COVER] Cover diperbarui");
     };
 
     gambar.onerror = function() {
@@ -79,7 +81,7 @@ function hubungkan() {
     socket = new WebSocket("ws://127.0.0.1:8766");
 
     socket.onopen = function() {
-        console.log("[COVER] Terhubung ke Bridge YTMD");
+        console.log("[COVER] Terhubung ke Bridge");
     };
 
     socket.onmessage = function(event) {
@@ -90,25 +92,19 @@ function hubungkan() {
 
             const cover = pesan.data?.cover;
 
-            if (cover) {
-                tampilkanCover(cover);
-            }
+            if (cover) tampilkanCover(cover);
 
         } catch (error) {
-            console.log("[COVER] Kesalahan data:", error);
+            console.log(error);
         }
     };
 
     socket.onclose = function() {
-        console.log("[COVER] Koneksi terputus, mencoba kembali");
-
         clearTimeout(reconnectTimer);
-
         reconnectTimer = setTimeout(hubungkan, 3000);
     };
 
-    socket.onerror = function(error) {
-        console.log("[COVER] WebSocket error");
+    socket.onerror = function() {
         socket.close();
     };
 }
